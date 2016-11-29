@@ -8,57 +8,62 @@
 
 import UIKit
 
-private let categoriesURL = "http://www.jin.am/api/jin/categories"
+class CategoriesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
-class CategoriesViewController: UIViewController {
-
+    @IBOutlet weak var tableView: UITableView!
+    
+    private lazy var refreshControl: UIRefreshControl = {
+        let control = UIRefreshControl()
+        control.addTarget(self, action: #selector(refreshAction), for: .valueChanged)
+        return control
+    }()
+    
+    var categories = [Category]()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        self.loadCategories(completion: { (categories) in
-            print(categories)
+        tableView.addSubview(refreshControl)
+        loadData()
+    }
+    
+    // MARK: Actions
+    
+    func refreshAction() {
+        loadData()
+    }
+    
+    private func loadData() {
+        APIManager.shared.loadCategories(completion: { (categories) in
+            if let results = categories["results"] as? [[String : Any]] {
+                var tempCategories = [Category]()
+                for categoryDictionary in results {
+                    if let category = Category(withDictionary: categoryDictionary) {
+                        tempCategories.append(category)
+                    }
+                }
+                self.categories = tempCategories
+            } else {
+                // Handle error
+            }
+            self.refreshControl.endRefreshing()
+            self.tableView.reloadData()
         })
     }
     
-    private func loadCategories(completion: @escaping (_ receivedData: [String : Any]) -> Void) {
-        
-        // Create and Configure a configuration for session
-        let configuration = URLSessionConfiguration.default
-        configuration.allowsCellularAccess = false
-        
-        // Create URLSession instance
-        let session = URLSession(configuration: configuration)
-        
-        // Create URL for request
-        if let requestURL = URL(string: categoriesURL) {
-            
-            // Create data task
-            let dataTask = session.dataTask(with: requestURL, completionHandler: { (data, response, err) in
-                
-                // Completion handler
-                // The response of the request is already received
-                
-                // Serialize received JSON
-                if data != nil {
-                    if let categoriesData = try? JSONSerialization.jsonObject(with: data!, options: JSONSerialization.ReadingOptions()) {
-                        
-                        // Get dictionary object
-                        let categoriesDictionary = categoriesData as! [String : Any]
-                        
-                        // Call completion clojure
-                        DispatchQueue.main.async {
-                            completion(categoriesDictionary)
-                        }
-                    }
-                } else if err != nil {
-                    // Handle error appropriately
-                    print(err!)
-                }
-                
-            })
-            
-            // Send request
-            dataTask.resume()
-        }
+    // MARK: UITableViewDataSource & UITableViewDelegate methods
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return categories.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "categoryCell", for: indexPath)
+        let category = categories[indexPath.row]
+        cell.textLabel?.text = category.title
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
     }
 }
