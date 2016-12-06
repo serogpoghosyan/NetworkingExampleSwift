@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Category {
+class Categoryyyy {
     
     var id: Int
     var title: String?

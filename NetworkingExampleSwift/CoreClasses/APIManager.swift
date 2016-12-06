@@ -24,10 +24,10 @@ class APIManager {
     
     // MARK: Network calls
     
-    func loadCategories(completion: @escaping (_ receivedData: [String : Any]) -> Void) {
+    func loadDataWith(endpoint: String, completion: @escaping (_ receivedData: [String : Any]) -> Void) {
         
         // Create URL for request
-        let requestURL = url(with: EndPoint.categories)
+        let requestURL = url(with: endpoint)
         
         // Create data task
         let dataTask = session.dataTask(with: requestURL, completionHandler: { (data, response, err) in
@@ -37,15 +37,13 @@ class APIManager {
             
             // Serialize received JSON
             if data != nil {
-                if let categoriesData = try? JSONSerialization.jsonObject(with: data!, options: JSONSerialization.ReadingOptions()) {
+                if let objectData = try? JSONSerialization.jsonObject(with: data!, options: JSONSerialization.ReadingOptions()) {
                     
                     // Get dictionary object
-                    let categoriesDictionary = categoriesData as! [String : Any]
+                    let object = objectData as! [String : Any]
                     
                     // Call completion clojure
-                    DispatchQueue.main.async {
-                        completion(categoriesDictionary)
-                    }
+                    completion(object)
                 }
             } else if err != nil {
                 // Handle error appropriately
@@ -63,7 +61,7 @@ extension APIManager {
     
     static let baseURL = "http://www.jin.am/api/jin/"
     
-    fileprivate struct EndPoint {
+    struct EndPoint {
         static let categories = "categories"
         static let subCategories = "subCategories"
         static let productByID = "product_id"

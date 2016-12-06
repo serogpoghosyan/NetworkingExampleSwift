@@ -33,21 +33,14 @@ class CategoriesViewController: UIViewController, UITableViewDataSource, UITable
     }
     
     private func loadData() {
-        APIManager.shared.loadCategories(completion: { (categories) in
-            if let results = categories["results"] as? [[String : Any]] {
-                var tempCategories = [Category]()
-                for categoryDictionary in results {
-                    if let category = Category(withDictionary: categoryDictionary) {
-                        tempCategories.append(category)
-                    }
-                }
-                self.categories = tempCategories
-            } else {
-                // Handle error
-            }
-            self.refreshControl.endRefreshing()
-            self.tableView.reloadData()
-        })
+        self.categories = DataManager.shared.loadCategories { (categories) in
+            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 3, execute: {
+                self.categories = categories
+                self.refreshControl.endRefreshing()
+                self.tableView.reloadData()
+            })
+        }
+        self.tableView.reloadData()
     }
     
     // MARK: UITableViewDataSource & UITableViewDelegate methods
